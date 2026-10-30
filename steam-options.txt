@@ -1,0 +1,54 @@
+============================================================================
+ STEAM LAUNCH OPTIONS  (copy and paste)
+============================================================================
+
+--- 64-BIT GAMES (Unity, etc.) --------------------------------------------
+
+FORM A (recommended: uses the universal launcher, respects %command%):
+
+/path/to/repo/vulkan-run.sh --mesa 25.3.5 -- %command% -force-d3d11
+
+FORM B (equivalent with source; Steam runs it with /bin/sh -> bash):
+
+bash -c '. /path/to/repo/vulkan-env.sh --mesa 25.3.5; exec "$@"' _ %command% -force-d3d11
+
+
+Variants:
+  Mesa 26.0.4        -> change "--mesa 25.3.5" to "--mesa 26.0.4"
+  With FPS counter   -> add --hud=fps   (Form A)  /  DXVK_HUD=fps before the command (Form B)
+  Without -force-d3d11 -> remove it if the game is not Unity/D3D12
+
+
+--- 32-BIT GAMES ----------------------------------------------------------
+
+  PROTON_USE_WINED3D=1 %command%
+
+  (There is no stable 32-bit RADV; OpenGL/wined3d works on this PS4.)
+
+
+--- NON-STEAM GAMES ADDED TO STEAM ----------------------------------------
+
+1. Steam > Add a Game > Add a Non-Steam Game > choose the .exe
+2. Properties > Force the use of a specific Steam Play compatibility tool > Proton 8.0
+3. Launch Options:
+
+   /path/to/repo/vulkan-run.sh --mesa 25.3.5 -- %command%
+
+   If the .exe is 32-bit:
+
+   PROTON_USE_WINED3D=1 %command%
+
+
+--- NON-STEAM GAMES WITHOUT STEAM (terminal) ------------------------------
+
+64-bit:
+  /path/to/repo/vulkan-run.sh --proton -- "/run/media/USER/External/Games/Example Game/game.exe"
+
+32-bit:
+  /path/to/repo/vulkan-run.sh --wined3d --proton -- "/run/media/USER/External/Games/Example Game/game32.exe"
+
+
+--- CONFIRM THAT IT WORKS -------------------------------------------------
+
+Add --hud=fps,devinfo (Form A) or DXVK_HUD=devinfo (Form B).
+The top-left corner should show:  Mesa 25.3.5 (git-39f24bf409)  /  RADV LIVERPOOL

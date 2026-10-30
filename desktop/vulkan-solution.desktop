@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vulkan Solution (folder)
+Comment=Reports, launchers and stable Mesa builds
+Exec=xdg-open @ROOT@
+Path=@ROOT@
+Icon=folder
+Terminal=false

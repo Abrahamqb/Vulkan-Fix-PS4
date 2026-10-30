@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Check Vulkan (PS4)
+Comment=Verify RADV/Mesa for each installed version
+Exec=xfce4-terminal --hold -x @ROOT@/check.sh
+Path=@ROOT@
+Icon=utilities-terminal
+Terminal=false
