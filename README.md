@@ -21,8 +21,8 @@ Mesa del sistema: 26.0.8
 ### Recomendada: un solo comando
 
 ```bash
-git clone https://github.com/YOUR-USER/YOUR-REPO.git
-cd YOUR-REPO
+git clone https://github.com/YOUR-USER/YOUR-REPO.git](https://github.com/Abrahamqb/Vulkan-Fix-PS4
+cd Vulkan-Fix-PS4
 ./install.sh
 ```
 
