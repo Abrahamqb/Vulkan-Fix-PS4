@@ -20,12 +20,12 @@ System Mesa: 26.0.8
 ### Recommended: one command
 
 ```bash
-git clone https://github.com/YOUR-USER/YOUR-REPO.git](https://github.com/Abrahamqb/Vulkan-Fix-PS4
+git clone https://github.com/Abrahamqb/Vulkan-Fix-PS4
 cd Vulkan-Fix-PS4
 ./install.sh
 ```
 
-Replace `YOUR-USER/YOUR-REPO` with the real URL. The repository and folder name
+The repository and folder name
 do not matter: every script detects its own location, so you can clone, move or
 rename it without editing anything.
 
