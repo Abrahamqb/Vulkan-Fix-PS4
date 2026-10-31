@@ -396,6 +396,7 @@ informes y que cada Mesa produce un entorno válido.
 
 ## 10. Notas
 
+- Uso de inteligencia artificial en el proyecto: [Info IA](use_of_AI.md)
 - Mesa 26.0.8 es un build del repo `ps4-video`; el parche PS4 solo añade
   LIVERPOOL/GLADIUS como GFX7, así que las Mesas antiguas del mismo repo son
   compatibles.
