@@ -395,6 +395,7 @@ reports, and that each Mesa produces a valid environment.
 
 ## 10. Notes
 
+- Use of artificial intelligence in the project: [Info IA](use_of_AI.md)
 - Mesa 26.0.8 is a build from the `ps4-video` repo; the PS4 patch only adds
   LIVERPOOL/GLADIUS as GFX7, so older Mesas from the same repo are compatible.
 - The bug is in RADV, not in the kernel or the hardware: OpenGL and
