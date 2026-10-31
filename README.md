@@ -21,12 +21,12 @@ Mesa del sistema: 26.0.8
 ### Recomendada: un solo comando
 
 ```bash
-git clone https://github.com/YOUR-USER/YOUR-REPO.git](https://github.com/Abrahamqb/Vulkan-Fix-PS4
+git clone https://github.com/Abrahamqb/Vulkan-Fix-PS4
 cd Vulkan-Fix-PS4
 ./install.sh
 ```
 
-Sustituye `YOUR-USER/YOUR-REPO` por la URL real. El nombre de la carpeta y del
+El nombre de la carpeta y del
 repositorio da igual: cada script detecta su propia ubicación, así que puedes
 clonarlo, moverlo o renombrarlo sin editar nada.
 
