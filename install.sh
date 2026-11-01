@@ -194,10 +194,26 @@ command -v vkcube >/dev/null 2>&1 || OPTIONAL_PKGS+=(vulkan-tools)
 command -v glxinfo >/dev/null 2>&1 || OPTIONAL_PKGS+=(mesa-utils)
 command -v xrandr >/dev/null 2>&1 || OPTIONAL_PKGS+=(xorg-xrandr)
 
+# Print unique, non-empty entries so an empty array never turns into a bogus
+# package name (printf with no arguments still emits one empty line).
+dedupe_pkgs() {
+  local -a items=()
+  local item
+  for item in "$@"; do
+    [ -n "$item" ] && items+=("$item")
+  done
+  [ ${#items[@]} -gt 0 ] || return 0
+  printf '%s\n' "${items[@]}" | sort -u
+}
+
 if [ ${#MISSING_PKGS[@]} -gt 0 ] || [ ${#OPTIONAL_PKGS[@]} -gt 0 ]; then
-  # Remove duplicates.
-  mapfile -t MISSING_PKGS < <(printf '%s\n' "${MISSING_PKGS[@]}" | sort -u)
-  mapfile -t OPTIONAL_PKGS < <(printf '%s\n' "${OPTIONAL_PKGS[@]}" | sort -u)
+  # Remove duplicates and empty entries.
+  if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    mapfile -t MISSING_PKGS < <(dedupe_pkgs "${MISSING_PKGS[@]}")
+  fi
+  if [ ${#OPTIONAL_PKGS[@]} -gt 0 ]; then
+    mapfile -t OPTIONAL_PKGS < <(dedupe_pkgs "${OPTIONAL_PKGS[@]}")
+  fi
   if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
     echo "  Required packages missing: ${MISSING_PKGS[*]}"
     if [ "$(id -u)" -ne 0 ] && ! command -v sudo >/dev/null 2>&1; then
@@ -305,7 +321,9 @@ if [ ! -e "$USER_MESA" ] && [ ! -L "$USER_MESA" ] && [ "$DEST" = "$ROOT/mesa-ver
 fi
 echo
 
-mapfile -t VERS < <("$ROOT/check.sh" --list 2>/dev/null || true)
+# Keep only real version lines; a diagnostic message must never be treated as
+# a Mesa version.
+mapfile -t VERS < <("$ROOT/check.sh" --list 2>/dev/null | grep -E '^[0-9]+(\.[0-9]+)+$' || true)
 if [ ${#VERS[@]} -eq 0 ]; then
   echo "ERROR: no Mesa versions found after the download." >&2
   exit 1
