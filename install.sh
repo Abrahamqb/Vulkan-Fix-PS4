@@ -172,9 +172,89 @@ if [ "$DRY_RUN" = 1 ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# 1b) Compatibility checks
+# ---------------------------------------------------------------------------
+echo "--- Compatibility checks ---------------------------------------"
+
+MACHINE_ARCH=$(uname -m)
+case "$MACHINE_ARCH" in
+  x86_64|amd64)
+    echo "  architecture: $MACHINE_ARCH (supported)"
+    ;;
+  *)
+    echo "ERROR: unsupported architecture: $MACHINE_ARCH" >&2
+    echo "  This project ships x86_64 Mesa/LLVM builds only." >&2
+    echo "  It cannot work on $MACHINE_ARCH." >&2
+    exit 1
+    ;;
+esac
+
+# RADV only works on AMD GPUs. Look at sysfs first, then fall back to lspci.
+AMD_GPU=0
+for vendor_file in /sys/class/drm/card*/device/vendor; do
+  [ -r "$vendor_file" ] || continue
+  if [ "$(cat "$vendor_file" 2>/dev/null)" = "0x1002" ]; then
+    AMD_GPU=1
+    break
+  fi
+done
+if [ "$AMD_GPU" = 0 ] && command -v lspci >/dev/null 2>&1; then
+  lspci -nn 2>/dev/null | grep -qiE '\[1002:[0-9a-f]{4}\]' && AMD_GPU=1
+fi
+if [ "$AMD_GPU" = 1 ]; then
+  echo "  GPU: AMD detected (RADV is the target driver)"
+else
+  echo
+  echo "WARNING: no AMD GPU detected."
+  echo "         These Mesa builds provide RADV, which only drives AMD GPUs."
+  echo "         On NVIDIA/Intel systems the Vulkan checks will fail."
+  echo "         If the GPU is an external/eGPU or lspci is unavailable, you"
+  echo "         can continue anyway."
+  echo
+  if ! confirm "Do you want to continue anyway?" n; then
+    echo "Aborted: this hardware is not supported." >&2
+    exit 1
+  fi
+fi
+echo
+
+# ---------------------------------------------------------------------------
 # 2) Required tools
 # ---------------------------------------------------------------------------
 echo "--- Checking required tools ------------------------------------"
+
+pacman_run() { # packages...
+  if [ "$(id -u)" -eq 0 ]; then
+    pacman -S --needed --noconfirm "$@"
+  else
+    sudo pacman -S --needed --noconfirm "$@"
+  fi
+}
+
+# Install packages with live output. If pacman does not know a package, the
+# local sync database is probably stale, so offer to refresh it and retry.
+pacman_install() { # packages...
+  local tmp rc
+  tmp=$(mktemp "${TMPDIR:-/tmp}/pacman-install.XXXXXX") || return 1
+  pacman_run "$@" 2>&1 | tee "$tmp"
+  rc=${PIPESTATUS[0]}
+  if [ "$rc" -ne 0 ] && grep -qi 'target not found' "$tmp"; then
+    echo "  The pacman database does not know all of these packages." >&2
+    echo "  The sync database is probably stale." >&2
+    if confirm "Refresh the pacman database (pacman -Sy) and try again?" y; then
+      if [ "$(id -u)" -eq 0 ]; then
+        pacman -Sy --noconfirm || { rm -f "$tmp"; return 1; }
+      else
+        sudo pacman -Sy --noconfirm || { rm -f "$tmp"; return 1; }
+      fi
+      pacman_run "$@" 2>&1 | tee "$tmp"
+      rc=${PIPESTATUS[0]}
+      [ "$rc" -eq 0 ] || echo "  Still failing. A full update (pacman -Syu) may be required." >&2
+    fi
+  fi
+  rm -f "$tmp"
+  return "$rc"
+}
 declare -A PKG_FOR=(
   [curl]=curl [bsdtar]=libarchive [readelf]=binutils [sha256sum]=coreutils
   [ldd]=glibc [file]=file [awk]=gawk [timeout]=coreutils [flock]=util-linux
@@ -222,10 +302,9 @@ if [ ${#MISSING_PKGS[@]} -gt 0 ] || [ ${#OPTIONAL_PKGS[@]} -gt 0 ]; then
       exit 1
     fi
     if confirm "Install them with pacman now?" y; then
-      if [ "$(id -u)" -eq 0 ]; then
-        pacman -S --needed --noconfirm "${MISSING_PKGS[@]}" || { echo "ERROR: pacman failed." >&2; exit 1; }
-      else
-        sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}" || { echo "ERROR: pacman failed." >&2; exit 1; }
+      if ! pacman_install "${MISSING_PKGS[@]}"; then
+        echo "ERROR: pacman failed." >&2
+        exit 1
       fi
     else
       echo "ERROR: required tools are missing." >&2
@@ -235,11 +314,7 @@ if [ ${#MISSING_PKGS[@]} -gt 0 ] || [ ${#OPTIONAL_PKGS[@]} -gt 0 ]; then
   if [ ${#OPTIONAL_PKGS[@]} -gt 0 ]; then
     echo "  Optional tools missing: ${OPTIONAL_PKGS[*]}"
     if confirm "Install optional tools now (recommended for the checks)?" y; then
-      if [ "$(id -u)" -eq 0 ]; then
-        pacman -S --needed --noconfirm "${OPTIONAL_PKGS[@]}" || echo "  WARNING: optional packages were not installed; checks may be limited."
-      else
-        sudo pacman -S --needed --noconfirm "${OPTIONAL_PKGS[@]}" || echo "  WARNING: optional packages were not installed; checks may be limited."
-      fi
+      pacman_install "${OPTIONAL_PKGS[@]}" || echo "  WARNING: optional packages were not installed; checks may be limited."
     fi
   fi
 else

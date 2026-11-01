@@ -14,8 +14,13 @@
 set -u
 SELF_DIR=$(cd "$(dirname "$0")" && pwd)
 STEAM_ROOT="${STEAM_ROOT:-$HOME/.local/share/Steam}"
-DISPLAY="${DISPLAY:-:0}"
+DISPLAY="${DISPLAY:-}"
 XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+# Only assume :0 when an X server is actually listening; on a pure Wayland or
+# headless session DISPLAY must stay empty so the GUI test is skipped.
+if [ -z "$DISPLAY" ] && [ -S /tmp/.X11-unix/X0 ]; then
+  DISPLAY=":0"
+fi
 export DISPLAY XAUTHORITY
 
 NO_GUI=0
@@ -53,7 +58,7 @@ done
 
 if [ "$LIST_ONLY" = 1 ]; then
   if [ ${#VERS[@]} -eq 0 ]; then
-    echo "No Mesa versions found in ~/mesa-versions or $SELF_DIR/mesa-versions"
+    echo "No Mesa versions found in ~/mesa-versions or $SELF_DIR/mesa-versions" >&2
     exit 1
   fi
   printf '%s\n' "${VERS[@]}"
